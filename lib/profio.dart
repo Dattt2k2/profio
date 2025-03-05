@@ -29,7 +29,8 @@ class _ProfioPageState extends State<ProfioPage> with TickerProviderStateMixin {
   late AnimationController _backgroundController;
   
   // ScrollController để phát hiện và xử lý cuộn
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController(
+  );
   final GlobalKey _profileSectionKey = GlobalKey();
   
   @override
@@ -141,6 +142,7 @@ class _ProfioPageState extends State<ProfioPage> with TickerProviderStateMixin {
         final responsive = ResponsiveBreakpoints.of(context);
         final isMobile = responsive.isMobile;
         final isTablet = responsive.isTablet;
+        final isDesktop = responsive.isDesktop;
         final iconSize = isMobile ? 24.0 : isTablet ? 32.0 : 48.0;
         final arcHeight = iconSize * 2;
 
@@ -184,7 +186,10 @@ class _ProfioPageState extends State<ProfioPage> with TickerProviderStateMixin {
       : const Color(0xFF0F0F1A);
     
     final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 600;
+    final responsive = ResponsiveBreakpoints.of(context);
+    final isMobile = responsive.isMobile;
+    final isTablet = responsive.isTablet;
+    final isDesktop = responsive.isDesktop;
     
     return Scaffold(
       extendBodyBehindAppBar: true, // Cho phép body mở rộng ra phía sau AppBar
@@ -231,139 +236,185 @@ class _ProfioPageState extends State<ProfioPage> with TickerProviderStateMixin {
       body: SkyBackgroundMixin(
         controller: _backgroundController,
         child: SafeArea(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              children: [
-                // Welcome section
-                SizedBox(
-                  width: screenSize.width,
-                  height: screenSize.height - 100, // Chiều cao gần bằng màn hình
-                  child: Center(
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 800),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: <Widget>[
-                          TextAnimator(
-                            'Welcome to my Profile Page',
-                            atRestEffect: WidgetRestingEffects.wave(),
-                            incomingEffect: WidgetTransitionEffects.incomingOffsetThenScale(),
-                            style: isSmallScreen 
-                              ? CustomTextStyle.headlineBig(context) 
-                              : CustomTextStyle.headlineSuperBig(context),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 30),
-                          CustomButton(
-                            text: "VIEW PROFILE",
-                            onpressed: _scrollToProfile,
-                          ),
-                          const SizedBox(height: 50),
-                          GestureDetector(
-                            onTap: _scrollToProfile,
-                            child: Column(
-                              children: [
-                                const Text(
-                                  "Scroll down to see more",
-                                  style: TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                                const Icon(
-                                  Icons.keyboard_arrow_down, 
-                                  size: 36,
-                                ),
-                              ],
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                children: [
+                  // Welcome section
+                  SizedBox(
+                    width: screenSize.width,
+                    height: screenSize.height - 100, // Chiều cao gần bằng màn hình
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            // Thay thế phần text animation cho cả mobile và desktop
+                            if (isMobile) // Sử dụng Wrap cho màn hình di động
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 8, // Khoảng cách giữa các từ
+                                runSpacing: 10, // Khoảng cách dọc giữa các dòng
+                                children: [
+                                  // Tách thành các từ thay vì từng chữ cái
+                                  for (String word in "Welcome to my Profile Page".split(" "))
+                                    TextAnimator(
+                                      word,
+                                      atRestEffect: WidgetRestingEffects.wave(
+                                        effectStrength: 0.4 + (word.length % 5 * 0.1), // Mỗi từ có cường độ khác nhau
+                                        duration: Duration(milliseconds: 700 + (word.length * 100)), // Mỗi từ có thời gian khác nhau
+                                      ),
+                                      style: CustomTextStyle.headlineBig(context).copyWith(
+                                        color: Theme.of(context).brightness == Brightness.light
+                                            ? const Color(0xFF2C3E50)
+                                            : const Color(0xFFECF0F1),
+                                      ),
+                                    ),
+                                ],
+                              )
+                            else // Cho máy tính bảng và desktop
+                              Wrap( // Thay SingleChildScrollView bằng Wrap để không bị cắt nội dung
+                                alignment: WrapAlignment.center,
+                                spacing: 12, // Khoảng cách giữa các từ
+                                runSpacing: 10, // Khoảng cách dọc giữa các dòng nếu không đủ không gian
+                                children: [
+                                  // Tách thành các từ thay vì từng chữ cái
+                                  for (String word in "Welcome to my Profile Page".split(" "))
+                                    TextAnimator(
+                                      word,
+                                      atRestEffect: WidgetRestingEffects.wave(
+                                        effectStrength: 0.4 + (word.length % 5 * 0.1), // Mỗi từ có cường độ wave khác nhau
+                                        duration: Duration(milliseconds: 700 + (word.length * 100)), // Mỗi từ có thời gian khác nhau
+                                      ),
+                                      style: isTablet 
+                                          ? CustomTextStyle.headlineBig(context).copyWith(
+                                              color: Theme.of(context).brightness == Brightness.light
+                                                  ? const Color(0xFF2C3E50)
+                                                  : const Color(0xFFECF0F1),
+                                            )
+                                          : CustomTextStyle.headlineSuperBig(context).copyWith(
+                                              color: Theme.of(context).brightness == Brightness.light
+                                                  ? const Color(0xFF2C3E50)
+                                                  : const Color(0xFFECF0F1),
+                                            ),
+                                    ),
+                                ],
+                              ),
+                            const SizedBox(height: 30),
+                            CustomButton(
+                              text: "VIEW PROFILE",
+                              backgroundColor: _isDarkMode ? Colors.transparent : Colors.lightBlue.shade100.withValues(alpha: 204), // 0.8*255=204
+                              onpressed: _scrollToProfile,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 50),
+                            GestureDetector(
+                              onTap: _scrollToProfile,
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    "Scroll down to see more",
+                                    style: TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                  const Icon(
+                                    Icons.keyboard_arrow_down, 
+                                    size: 36,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                
-                // Profile section - sẽ hiện khi cuộn xuống
-                Container(
-                  key: _profileSectionKey,
-                  width: screenSize.width,
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.white.withOpacity(0.85)
-                        : Colors.black.withOpacity(0.65),
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 5,
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: isSmallScreen ? 70 : 100,
-                        backgroundImage: const AssetImage('assets/images/profile_photo.jpg'),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "Your Name",
-                        style: isSmallScreen
-                            ? CustomTextStyle.headlineBig(context)
-                            : CustomTextStyle.headlineSuperBig(context),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "App Developer",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey,
+                  
+                  // Profile section - sẽ hiện khi cuộn xuống
+                  Container(
+                    key: _profileSectionKey,
+                    width: screenSize.width,
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.white.withOpacity(0.85)
+                          : Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 5,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+                        CircleAvatar(
+                          radius: isMobile ? 70 : isTablet ? 85 : 100,
+                          backgroundImage: const AssetImage('assets/images/profile_photo.jpg'),
                         ),
-                      ),
-                      const SizedBox(height: 30),
-                      const Divider(),
-                      _buildInfoSection(
-                        context,
-                        title: "About Me",
-                        content: "I'm a passionate developer with experience in Flutter and mobile app development. "
-                            "I love creating beautiful and functional applications that help people in their daily lives.",
-                      ),
-                      _buildInfoSection(
-                        context,
-                        title: "Skills",
-                        content: "Flutter • Dart • UI/UX Design • Firebase • RESTful APIs",
-                      ),
-                      _buildInfoSection(
-                        context,
-                        title: "Experience",
-                        content: "3+ years of experience in mobile app development with Flutter.",
-                      ),
-                      _buildInfoSection(
-                        context,
-                        title: "Education",
-                        content: "Bachelor's Degree in Computer Science",
-                      ),
-                      const SizedBox(height: 30),
-                      CustomButton(
-                        text: "Contact Me",
-                        onpressed: () {},
-                      ),
-                      const SizedBox(height: 30),
-                    ],
+                        const SizedBox(height: 20),
+                        Text(
+                          "Your Name",
+                          style: isMobile
+                              ? CustomTextStyle.headlineBig(context)
+                              : CustomTextStyle.headlineSuperBig(context),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          "App Developer",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Divider(),
+                        _buildInfoSection(
+                          context,
+                          title: "About Me",
+                          content: "I'm a passionate developer with experience in Flutter and mobile app development. "
+                              "I love creating beautiful and functional applications that help people in their daily lives.",
+                        ),
+                        _buildInfoSection(
+                          context,
+                          title: "Skills",
+                          content: "Flutter • Dart • UI/UX Design • Firebase • RESTful APIs",
+                        ),
+                        _buildInfoSection(
+                          context,
+                          title: "Experience",
+                          content: "3+ years of experience in mobile app development with Flutter.",
+                        ),
+                        _buildInfoSection(
+                          context,
+                          title: "Education",
+                          content: "Bachelor's Degree in Computer Science",
+                        ),
+                        const SizedBox(height: 30),
+                        CustomButton(
+                          text: "Contact Me",
+                          onpressed: () {},
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
-                ),
-                
-                // Bottom padding
-                const SizedBox(height: 50),
-              ],
+                  
+                  // Bottom padding
+                  const SizedBox(height: 50),
+                ],
+              ),
             ),
           ),
         ),
